@@ -204,7 +204,22 @@ namespace Omron_SimTest
                 byte[] bBuffer = new byte[10000];
                 
                 Random r1 = new System.Random();
+                int iPortDiv = 0;
 
+                string  iLastTCP = tcp.Client.LocalEndPoint.ToString();
+                string sLast = iLastTCP.Substring(0,iLastTCP.IndexOf(":"));
+                string[] sDiv = sLast.Split('.');
+                if (sDiv.Length < 0) return false;
+                int iPort = int.Parse(sDiv[sDiv.Length - 1]);
+
+                int iFormNode = -1;
+                for ( int i = 0; i < Form1.stData.Length; i++)
+                {
+                    if ( Form1.stData[i].iPort != iPort ) continue;
+                    iFormNode = i;
+                    break;
+                }
+                if ( iFormNode  == -1 ) return false;  
 
                 // 読み込み
                 try
@@ -274,20 +289,20 @@ namespace Omron_SimTest
                 switch ( sCommand)
                 {
                     case "1001"://エラー状態取得
-                        if (Form1.stData[PlcNodecls.iNode].bError_Hard == true) Err = "01";
-                        if (Form1.stData[PlcNodecls.iNode].bError_Memory == true) Err = "02";
+                        if (Form1.stData[iFormNode].bError_Hard == true) Err = "01";
+                        if (Form1.stData[iFormNode].bError_Memory == true) Err = "02";
                         sResponce = "AA550C00FF1001000000F0F0F000"+Err+"00\r\n";
                         break;
 
                     case "1003"://モードスイッチ取得
-                        if (Form1.stData[PlcNodecls.iNode].bMode_Thr == true) Mode = "01";
-                        if (Form1.stData[PlcNodecls.iNode].bMode_Fun == true) Mode = "02";
+                        if (Form1.stData[iFormNode].bMode_Thr == true) Mode = "01";
+                        if (Form1.stData[iFormNode].bMode_Fun == true) Mode = "02";
                         sResponce = "AA550C00FF1003000000F0F0F000" + Mode + "00\r\n";
                         break;
 
                     case "8004"://バージョン情報取得
-                        if (Form1.stData[PlcNodecls.iNode].bID_TempEnable == true) IDHIGH = "5";
-                        if (Form1.stData[PlcNodecls.iNode].bID_PD50 == true) IDLOW = "1";
+                        if (Form1.stData[iFormNode].bID_TempEnable == true) IDHIGH = "5";
+                        if (Form1.stData[iFormNode].bID_PD50 == true) IDLOW = "1";
                         IDX = IDHIGH + IDLOW;
                         //Ver02.10.00例
                         sResponce = "AA550C00FF1003000000F0F0F000" + IDX+ "02100000\r\n";
@@ -296,30 +311,30 @@ namespace Omron_SimTest
                     case "5100"://測定値取得
 
                         //未計測
-                        if (Form1.stData[PlcNodecls.iNode].bUnCalc == true)
+                        if (Form1.stData[iFormNode].bUnCalc == true)
                         {
                             bErr = true;
                             break;
                         }
 
                         // レスポンスコード作成
-                        if (Form1.stData[PlcNodecls.iNode].bError_Hard == true) Err = "01";
-                        if (Form1.stData[PlcNodecls.iNode].bError_From == true) Err = "02";
+                        if (Form1.stData[iFormNode].bError_Hard == true) Err = "01";
+                        if (Form1.stData[iFormNode].bError_From == true) Err = "02";
 
                         //機種ID作成
-                        if (Form1.stData[PlcNodecls.iNode].bID_TempEnable == true) IDHIGH = "5";
-                        if (Form1.stData[PlcNodecls.iNode].bID_PD50 == true) IDLOW = "1";
+                        if (Form1.stData[iFormNode].bID_TempEnable == true) IDHIGH = "5";
+                        if (Form1.stData[iFormNode].bID_PD50 == true) IDLOW = "1";
                         IDX = IDHIGH + IDLOW;
 
                         // 小粒子作成
-                        string sLit = String.Format("{0:X8}", Form1.stData[PlcNodecls.iNode].iParticle_little);
-                        string sMid = String.Format("{0:X8}", Form1.stData[PlcNodecls.iNode].iParticle_Middle);
-                        string sBig = String.Format("{0:X8}", Form1.stData[PlcNodecls.iNode].iParticle_Big);
+                        string sLit = String.Format("{0:X8}", Form1.stData[iFormNode].iParticle_little);
+                        string sMid = String.Format("{0:X8}", Form1.stData[iFormNode].iParticle_Middle);
+                        string sBig = String.Format("{0:X8}", Form1.stData[iFormNode].iParticle_Big);
 
                         //温度等作成
-                        string sTmp = String.Format("{0:X4}", Form1.stData[PlcNodecls.iNode].iTemp);
-                        string sCon = String.Format("{0:X4}", Form1.stData[PlcNodecls.iNode].iCon);
-                        string sDp = String.Format("{0:X4}", Form1.stData[PlcNodecls.iNode].iDpTemp);
+                        string sTmp = String.Format("{0:X4}", Form1.stData[iFormNode].iTemp);
+                        string sCon = String.Format("{0:X4}", Form1.stData[iFormNode].iCon);
+                        string sDp = String.Format("{0:X4}", Form1.stData[iFormNode].iDpTemp);
                         if (Form1.stData[PlcNodecls.iNode].bID_TempEnable == true)
                         {
                             sTmp = sCon = sDp ="7FFE";                            
@@ -328,7 +343,7 @@ namespace Omron_SimTest
 
                         
                         //機器正常ならこの文字列でOK
-                        if (Form1.stData[PlcNodecls.iNode].bError_Hard == false) break;
+                        if (Form1.stData[iFormNode].bError_Hard == false) break;
 
                         //機器異常ならこの文字列にする
                         sResponce = "AA55"+"81"+"00FF5100000000F0F0F0"+"01"+"01"+"11"+"000300"+"00000000"+"00000000"+"00000000"+"7FFE"+"7FFE"+"7FFE"+ "FFFFFFFFFFFFFFFFFFFFB2\r\n";

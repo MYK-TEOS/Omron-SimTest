@@ -27,7 +27,7 @@ namespace Omron_SimTest
         const string dn_Temp = "温度";
         const string dn_Con = "湿度";
         const string dn_DpTemp = "露点湿度";
-        const string dn_Port = "ポート番号";
+        const string dn_Port = "アドレス末尾";
         const string dn_Error_Hard = "ハードエラー";
         const string dn_Error_Memory = "メモリエラー";
         const string dn_Mode_Run = "RUN";
@@ -54,7 +54,7 @@ namespace Omron_SimTest
             public int iTemp;    //温度
             public int iCon;    //湿度
             public int iDpTemp;    //露点湿度
-            public int iPort;    //ポート番号
+            public int iPort;    //アドレス末尾
 
 
             public bool bError_Hard;    // ハードエラー
@@ -102,13 +102,15 @@ namespace Omron_SimTest
             for (int i = 0; i < iMachineNum; i++ )
             {
                 stData[i].bEnable = true;
-                stData[i].iPort = 2323+i;
+                stData[i].iPort = 150+i;
                 stData[i].bMode_Run = true;
-                ConnectClass cl = new ConnectClass();
-                cl.iPortRead = stData[i].iPort;
-                cl.iNode = i;
-                clList.Add(cl);
             }
+
+            ConnectClass cl = new ConnectClass();
+            cl.iPortRead = 2323;
+            cl.iNode = 0;
+            clList.Add(cl);
+
             for (int i = 0;i < 60; i++)
             {
                 comboBox1.Items.Add(i + 1);
@@ -218,96 +220,6 @@ namespace Omron_SimTest
             }
         }
 
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            Byte[] bBuffer = new Byte[1024];
-            //String sSetData;
-            string Cmd;
-            //int iData;
-            int bytesRead;
-            int iReadNum;
-            while (e.Cancel == false)
-            {
-                // 終了判定
-                if (backgroundWorker1.CancellationPending)
-                {
-                    e.Cancel = true;
-                    continue;
-                }
-                // バッファクリア
-                for (int i = 0; i < bBuffer.Length; i++)
-                {
-                    bBuffer[i] = 0;
-                }
-
-                // 読み込み
-                iReadNum = serialPort1.BytesToRead ;
-                System.Threading.Thread.Sleep(50);  // 読み込みバッファに読み込む＆次回への時間待ち
-                if (iReadNum == 0)  continue;
-
-                // データ読み込み
-                bytesRead = 0;
-                while (true)
-                {
-                    if (serialPort1.BytesToRead == 0) break;
-                    bBuffer[bytesRead] = (byte)serialPort1.ReadByte();
-                    bytesRead++;
-                    System.Threading.Thread.Sleep(0);
-
-                    if (bBuffer[bytesRead - 1] == 0x0d) break;
-                }
-
-                Cmd = ASCIIEncoding.ASCII.GetString(bBuffer, 3, 2);
-                SendLogByte("Read ", bBuffer, bytesRead);
-
-                // コマンド先頭が@でなければ応答しない
-                if (bBuffer[0] != '@') continue;
-                
-                // アドレス取得
-                //int iAddr = (bBuffer[1] - '0') * 10 + bBuffer[2] - '0' - 1;
-                byte[] bData = new byte[2];
-                bData[0] = bBuffer[1]; bData[1] = bBuffer[2];
-                string sAd = System.Text.Encoding.GetEncoding(932).GetString(bData);
-                int iAddr = -1;
-                try
-                {
-                    iAddr = Convert.ToInt32(sAd, 16) - 1;
-                }
-                catch
-                {
-                }
-
-                // 無効時は応答しない
-                if ( iAddr >= 0) if (stData[iAddr].bEnable == false) continue;
-                
-                // スリープ設定
-                if ( checkBox4.CheckState == CheckState.Checked)
-                {
-                    int iTimer = 1000;
-                    Int32.TryParse(textBox2.Text,  out iTimer);
-                    System.Threading.Thread.Sleep(iTimer);
-                }
-            }
-           
-        }
-
-        private void SendLogByte ( string sPre , Byte[] bData , int iNum)
-        {
-            if (checkBox1.Checked == false) return;
-            string sOut ="";
-            for ( int i = 0 ; i < iNum ; i++)
-            {
-                //sOut = sOut + bData[i].ToString("X")+" ";
-                sOut = sOut + string.Format("{0,0:X2} ", Convert.ToInt32(bData[i]));
-            }
-            sOut = sOut + " ASCII: (" + ASCIIEncoding.ASCII.GetString(bData, 0,iNum);
-
-            lock (thisLock)
-            {
-                if (sbLog.Length > 100000) sbLog.Clear();//一定量でログをクリア
-                sbLog.Append(DateTime.Now.ToLongTimeString() + "  : " + sPre + sOut + "\r\n");
-            }
-        }
 
         /// <summary>
         /// 終了処理
@@ -316,11 +228,6 @@ namespace Omron_SimTest
         /// <param name="e"></param>
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            backgroundWorker1.CancelAsync();
-            while ( backgroundWorker1.CancellationPending == false )
-            {
-                System.Threading.Thread.Sleep(20);
-            }
         }
 
         /// <summary>
