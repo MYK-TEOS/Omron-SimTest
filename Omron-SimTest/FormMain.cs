@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.IO.Ports;
-using System.Management;
 
 namespace Omron_SimTest
 {
 
-    public partial class Form1 : Form
+    public partial class FormMain : Form
     {
         #region 定数
-        static int iMachineNum = 31;
+        static readonly int iMachineNum = 31;
         static int iTimerCount = 0;
-        Random rnd = new Random();
+        readonly Random rnd = new Random();
 
         const string dn_NO = "番号";
         const string dn_ENABLE = "有効";
@@ -43,10 +38,10 @@ namespace Omron_SimTest
 
         DataSet _ds;
         DataTable _dt;
-        private Object thisLock = new Object();
-        StringBuilder sbLog;
+        private readonly Object thisLock = new Object();
+        readonly StringBuilder sbLog;
 
-        public struct mData
+        public struct MData
         {
             public int iParticle_little;        //小粒子
             public int iParticle_Middle;      //中粒子
@@ -70,25 +65,15 @@ namespace Omron_SimTest
 
         }
 
-        public static mData[] stData = new mData[iMachineNum];
-        List<ConnectClass> clList;
+        public static MData[] stData = new MData[iMachineNum];
+        readonly List<ConnectClass> clList;
 
-        public class ComboBoxCustomItem
-        {
-            public string Comname;
-            public string DeviceName;
-
-            public override string ToString()
-            {
-                return DeviceName;
-            }
-        }
         static bool bDataChange;
 
         #endregion
 
 
-        public Form1()
+        public FormMain()
         {
             InitializeComponent();
             sbLog = new StringBuilder();
@@ -97,25 +82,27 @@ namespace Omron_SimTest
 
         private void Form1_Load(object sender, EventArgs e)
         {
-           
+
             bDataChange = false;
-            for (int i = 0; i < iMachineNum; i++ )
+            for (int i = 0; i < iMachineNum; i++)
             {
                 stData[i].bEnable = true;
-                stData[i].iPort = 150+i;
+                stData[i].iPort = 150 + i;
                 stData[i].bMode_Run = true;
             }
 
-            ConnectClass cl = new ConnectClass();
-            cl.iPortRead = 2323;
-            cl.iNode = 0;
+            ConnectClass cl = new ConnectClass
+            {
+                PortRead = 2323,
+                Node = 0
+            };
             clList.Add(cl);
 
-            for (int i = 0;i < 60; i++)
+            for (int i = 0; i < 60; i++)
             {
                 comboBox1.Items.Add(i + 1);
             }
-            comboBox1.SelectedIndex = 60-1;
+            comboBox1.SelectedIndex = 60 - 1;
 
             // データグリッド設定
             Datainit();
@@ -136,7 +123,7 @@ namespace Omron_SimTest
             _dt.Columns.Add(dn_Temp, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_Con, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_DpTemp, Type.GetType(Consts.TYPE_INT));
-           _dt.Columns.Add(dn_Port, Type.GetType(Consts.TYPE_INT));
+            _dt.Columns.Add(dn_Port, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_Error_Hard, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Error_Memory, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Mode_Run, Type.GetType(Consts.TYPE_BOL));
@@ -154,7 +141,7 @@ namespace Omron_SimTest
             {
                 dr = _dt.Rows.Add();
 
-                dr[dn_NO] = i+1;
+                dr[dn_NO] = i + 1;
                 dr[dn_ENABLE] = stData[i].bEnable;
                 dr[dn_Particle_little] = stData[i].iParticle_little;
                 dr[dn_Particle_Middle] = stData[i].iParticle_Middle;
@@ -169,12 +156,12 @@ namespace Omron_SimTest
                 dr[dn_Mode_Run] = stData[i].bMode_Run;
                 dr[dn_Mode_Thr] = stData[i].bMode_Thr;
                 dr[dn_Mode_Fun] = stData[i].bMode_Fun;
-                
+
                 dr[dn_ID_TempEnable] = stData[i].bID_TempEnable;
                 dr[dn_ID_PD50] = stData[i].bID_PD50;
                 dr[dn_Error_From] = stData[i].bError_From;
                 dr[dn_UnCalc] = stData[i].bUnCalc;
-           }
+            }
 
             dataGridView1.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Raised;
@@ -182,12 +169,12 @@ namespace Omron_SimTest
             dataGridView1.ColumnHeadersHeight = dataGridView1.Size.Height;
             dataGridView1.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-            
+
             dataGridView1.DataSource = _dt;
             dataGridView1.Columns[dn_NO].ReadOnly = true;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Button1_Click(object sender, EventArgs e)
         {
             try
             {
@@ -197,14 +184,14 @@ namespace Omron_SimTest
                 {
                     lock (thisLock)
                     {
-                        sbLog.Append(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.iPortRead+"をオープンしました。" + "\r\n");
+                        sbLog.Append(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
                         textBox1.Text = sbLog.ToString();
                     }
                     cl.StartSocket();
                 }
                 //backgroundWorker1.RunWorkerAsync();
             }
-            catch ( Exception ex)
+            catch (Exception ex)
             {
 
                 lock (thisLock)
@@ -221,21 +208,14 @@ namespace Omron_SimTest
         }
 
 
-        /// <summary>
-        /// 終了処理
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-        }
+
 
         /// <summary>
         /// 値変更
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private void DataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             DataRow dr;
             DataGridView dgv = (DataGridView)sender;
@@ -247,18 +227,18 @@ namespace Omron_SimTest
                     stData[y].iParticle_little = (int)dgv[x, y].Value;
                     break;
                 case dn_Particle_Middle:
-                    stData[y].iParticle_Middle  = (int)dgv[x, y].Value;
+                    stData[y].iParticle_Middle = (int)dgv[x, y].Value;
                     break;
                 case dn_Particle_Big:
                     stData[y].iParticle_Big = (int)dgv[x, y].Value;
                     break;
                 case dn_Port:
-                    stData[y].iPort  = (int)dgv[x, y].Value;
+                    stData[y].iPort = (int)dgv[x, y].Value;
                     break;
                 case dn_Error_Hard:
                     stData[y].bError_Hard = (bool)dgv[x, y].Value;
                     if (stData[y].bError_Hard == false) break;
-                    if (stData[y].bError_Memory == true )
+                    if (stData[y].bError_Memory == true)
                     {
                         _dt.Rows[y][dn_Error_Memory] = false;
                         stData[y].bError_Memory = false;
@@ -274,7 +254,7 @@ namespace Omron_SimTest
                     }
                     break;
                 case dn_Mode_Run:
-                    stData[y].bMode_Run= (bool)dgv[x, y].Value;
+                    stData[y].bMode_Run = (bool)dgv[x, y].Value;
                     if (stData[y].bMode_Run == false) break;
                     if (stData[y].bMode_Thr == true || stData[y].bMode_Fun == true)
                     {
@@ -310,7 +290,7 @@ namespace Omron_SimTest
                     }
                     break;
                 case dn_ENABLE:
-                    stData[y].bEnable= (bool)dgv[x, y].Value;
+                    stData[y].bEnable = (bool)dgv[x, y].Value;
                     break;
 
 
@@ -326,7 +306,7 @@ namespace Omron_SimTest
 
 
                 case dn_ID_TempEnable:
-                    stData[y].bID_TempEnable= (bool)dgv[x, y].Value;
+                    stData[y].bID_TempEnable = (bool)dgv[x, y].Value;
                     break;
 
                 case dn_ID_PD50:
@@ -345,23 +325,27 @@ namespace Omron_SimTest
             dataGridView1.Update();
         }
 
-        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        private void ToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             if (dataGridView1.SelectedCells.Count == 0) return;
             if (dataGridView1.SelectedCells.IsReadOnly) return;
-            DialogValueIO diag = new DialogValueIO();
-            diag._cells = dataGridView1.SelectedCells;
+            DialogValueIO diag = new DialogValueIO
+            {
+                _cells = dataGridView1.SelectedCells
+            };
             diag.ShowDialog();
         }
 
         /// <summary>
-        /// 
+        /// タイマー処理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void timer1_Tick(object sender, EventArgs e)
+        private void Timer1_Tick(object sender, EventArgs e)
         {
             DataRow dr;
+
+            // ログ処理
             if (textBox1.TextLength != sbLog.Length)
             {
                 string sTmp;
@@ -376,7 +360,7 @@ namespace Omron_SimTest
                 {
                     string sOut = sTmp.Substring(sTmp_textbox.Length, sTmp.Length - sTmp_textbox.Length);
                     textBox1.AppendText(sOut);
-                    if ( textBox1.TextLength == sTmp_textbox.Length)
+                    if (textBox1.TextLength == sTmp_textbox.Length)
                     {
                         sbLog.Clear();
                         textBox1.Text = "";
@@ -398,7 +382,7 @@ namespace Omron_SimTest
             if (checkBox2.Checked)
             {
                 iTimerCount++;
-                
+
                 if (iTimerCount >= comboBox1.SelectedIndex)
                 {
                     iTimerCount = 0;
@@ -417,7 +401,7 @@ namespace Omron_SimTest
             }
 
             // 画面更新
-            if ( bDataChange == true )
+            if (bDataChange == true)
             {
                 for (int i = 0; i < iMachineNum; i++)
                 {
@@ -454,7 +438,7 @@ namespace Omron_SimTest
             dataGridView1.Width = this.Width - dataGridView1.Left * 2;
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void Button2_Click(object sender, EventArgs e)
         {
 
             lock (thisLock)
@@ -469,7 +453,7 @@ namespace Omron_SimTest
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void button3_Click(object sender, EventArgs e)
+        private void Button3_Click(object sender, EventArgs e)
         {
             StringBuilder sOut = new StringBuilder();
             for (int y = 0; y < iMachineNum; y++)
@@ -485,19 +469,19 @@ namespace Omron_SimTest
             }
 
             Clipboard.SetDataObject(sOut.ToString(), true);
-            
+
         }
 
-         /// <summary>
+        /// <summary>
         /// クリップボードからの読み込み
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void button4_Click(object sender, EventArgs e)
+        private void Button4_Click(object sender, EventArgs e)
         {
-            
+
             textBox1.Text = "";
-            
+
             IDataObject data = Clipboard.GetDataObject();
 
             if (data.GetDataPresent(DataFormats.Text))
@@ -541,7 +525,7 @@ namespace Omron_SimTest
             }
         }
 
-        private void dataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        private void DataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentCell.ValueType == typeof(Boolean))
             {
@@ -550,7 +534,7 @@ namespace Omron_SimTest
             }
         }
 
-        private void textBox2_KeyPress(object sender, KeyPressEventArgs e)
+        private void TextBox2_KeyPress(object sender, KeyPressEventArgs e)
         {
             //0～9と、バックスペース以外の時は、イベントをキャンセルする
             if ((e.KeyChar < '0' || '9' < e.KeyChar) && e.KeyChar != '\b')
@@ -572,6 +556,6 @@ namespace Omron_SimTest
     {
         public const string TYPE_INT = "System.Int32";
         public const string TYPE_STR = "System.String";
-        public const string TYPE_BOL = "System.Boolean";        
+        public const string TYPE_BOL = "System.Boolean";
     }
 }

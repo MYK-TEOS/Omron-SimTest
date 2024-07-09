@@ -42,7 +42,7 @@
             this.btnCancel.TabIndex = 5;
             this.btnCancel.Text = "キャンセル";
             this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            this.btnCancel.Click += new System.EventHandler(this.BtnCancel_Click);
             // 
             // btnEnter
             // 
@@ -53,7 +53,7 @@
             this.btnEnter.TabIndex = 4;
             this.btnEnter.Text = "OK";
             this.btnEnter.UseVisualStyleBackColor = true;
-            this.btnEnter.Click += new System.EventHandler(this.btnEnter_Click);
+            this.btnEnter.Click += new System.EventHandler(this.BtnEnter_Click);
             // 
             // txtValue
             // 
