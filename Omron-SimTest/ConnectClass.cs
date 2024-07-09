@@ -166,6 +166,9 @@ namespace Omron_SimTest
                 st.WriteTimeout = 2000;
                 bool bRet = true;
                 PlcNodecls.bConnecting = true;
+                string sLocalEndIP = tcp.Client.LocalEndPoint.ToString();
+
+                FormMain.LogWrite(sLocalEndIP + " 接続" );
                 while (bRet == true)
                 {
                     if (rcv.stop_flg == true) break;
@@ -178,6 +181,7 @@ namespace Omron_SimTest
 
                     Thread.Sleep(10);
                 }
+                FormMain.LogWrite(sLocalEndIP + " 切断");
 
                 tcp.Close();
                 st.Dispose();
@@ -246,6 +250,10 @@ namespace Omron_SimTest
                 if (bBuffer[2] != 0x35) bHeaderError = true; //'5'
                 if (bBuffer[3] != 0x35) bHeaderError = true; //'5'
 
+                string CommandAll = Encoding.Default.GetString(bBuffer).TrimEnd('\0');
+                CommandAll = CommandAll.TrimEnd('\n').TrimEnd('\r');
+                FormMain.LogWrite(iFormNode.ToString("00") + " 受信：" + CommandAll);
+
                 if (bHeaderError == true)
                 {
 
@@ -268,6 +276,7 @@ namespace Omron_SimTest
                     }
                     sb.AppendLine("");
                     System.Diagnostics.Debug.WriteLine(sb.ToString());
+                    FormMain.LogWrite(iFormNode.ToString("00") + " ERR\r\n" + sb.ToString());
 
                     //Clipboard.SetDataObject(sb.ToString(), true);
                     return false;
@@ -358,6 +367,8 @@ namespace Omron_SimTest
 
                 try
                 {
+
+                    FormMain.LogWrite(iFormNode.ToString("00")+" 返信：" +sResponce);
                     byte[] bytes = Encoding.ASCII.GetBytes(sResponce);
                     int iRetnum = bytes.Count();
                     // 返信ウェイト

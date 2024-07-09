@@ -38,8 +38,8 @@ namespace Omron_SimTest
 
         DataSet _ds;
         DataTable _dt;
-        private readonly Object thisLock = new Object();
-        readonly StringBuilder sbLog;
+        private static readonly Object thisLock = new Object();
+        static readonly StringBuilder sbLog = new StringBuilder();
 
         public struct MData
         {
@@ -76,7 +76,6 @@ namespace Omron_SimTest
         public FormMain()
         {
             InitializeComponent();
-            sbLog = new StringBuilder();
             clList = new List<ConnectClass>();
         }
 
@@ -184,26 +183,35 @@ namespace Omron_SimTest
                 {
                     lock (thisLock)
                     {
-                        sbLog.Append(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
-                        textBox1.Text = sbLog.ToString();
+                        LogWrite(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
+                        //sbLog.Append(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
+                        //textBox1.Text = sbLog.ToString();
                     }
                     cl.StartSocket();
                 }
-                //backgroundWorker1.RunWorkerAsync();
             }
             catch (Exception ex)
             {
 
                 lock (thisLock)
                 {
-                    sbLog.Append(ex.Message + "\r\n");
-                    textBox1.Text = sbLog.ToString();
+                    LogWrite(ex.Message + "\r\n");
+                    //sbLog.Append(ex.Message + "\r\n");
+                    //textBox1.Text = sbLog.ToString();
                 }
                 foreach (var cl in clList)
                 {
                     cl.StopSocket();
                 }
 
+            }
+        }
+
+        public static void LogWrite(string s)
+        {
+            lock (thisLock)
+            {
+                sbLog.Append(s + "\r\n");
             }
         }
 
@@ -345,39 +353,41 @@ namespace Omron_SimTest
         {
             DataRow dr;
 
-            // ログ処理
-            if (textBox1.TextLength != sbLog.Length)
+            if (checkBox1.Checked == true)
             {
-                string sTmp;
-                lock (thisLock)
+                // ログ処理
+                if (textBox1.TextLength != sbLog.Length)
                 {
-                    sTmp = sbLog.ToString();
-                }
-                string sTmp_textbox = textBox1.Text;
+                    string sTmp;
+                    lock (thisLock)
+                    {
+                        sTmp = sbLog.ToString();
+                    }
+                    string sTmp_textbox = textBox1.Text;
 
-                int iLength = sTmp.Length - sTmp_textbox.Length;
-                if (iLength > 0)
-                {
-                    string sOut = sTmp.Substring(sTmp_textbox.Length, sTmp.Length - sTmp_textbox.Length);
-                    textBox1.AppendText(sOut);
-                    if (textBox1.TextLength == sTmp_textbox.Length)
+                    int iLength = sTmp.Length - sTmp_textbox.Length;
+                    if (iLength > 0)
+                    {
+                        string sOut = sTmp.Substring(sTmp_textbox.Length, sTmp.Length - sTmp_textbox.Length);
+                        textBox1.AppendText(sOut);
+                        if (textBox1.TextLength == sTmp_textbox.Length)
+                        {
+                            sbLog.Clear();
+                            textBox1.Text = "";
+                        }
+                    }
+                    else
                     {
                         sbLog.Clear();
                         textBox1.Text = "";
                     }
-                }
-                else
-                {
-                    sbLog.Clear();
-                    textBox1.Text = "";
-                }
 
-                //カレット位置を末尾に移動
-                this.textBox1.SelectionStart = textBox1.Text.Length;
-                //カレット位置までスクロール
-                this.textBox1.ScrollToCaret();
+                    //カレット位置を末尾に移動
+                    this.textBox1.SelectionStart = textBox1.Text.Length;
+                    //カレット位置までスクロール
+                    this.textBox1.ScrollToCaret();
+                }
             }
-
             // 値のランダム更新
             if (checkBox2.Checked)
             {
@@ -541,6 +551,7 @@ namespace Omron_SimTest
             {
                 e.Handled = true;
             }
+            ChangeSleepWait();
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
@@ -550,6 +561,27 @@ namespace Omron_SimTest
                 cl.StopSocket();
             }
 
+        }
+
+        private void checkBox4_CheckedChanged(object sender, EventArgs e)
+        {
+            ChangeSleepWait();
+        }
+
+        private void ChangeSleepWait()
+        {
+            bool btry = int.TryParse(textBox2.Text, out int n);
+            if (!btry) return;
+            if (checkBox4.Checked == false) n = 0;
+            foreach (var cl in clList)
+            {
+                cl.SleepSec = n;
+            }
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            ChangeSleepWait();
         }
     }
     static class Consts
