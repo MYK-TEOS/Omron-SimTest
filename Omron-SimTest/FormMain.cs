@@ -134,7 +134,7 @@ namespace Omron_SimTest
             _dt.Columns.Add(dn_Error_From, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_UnCalc, Type.GetType(Consts.TYPE_BOL));
 
-
+            
             DataRow dr;
             for (int i = 0; i < iMachineNum; i++)
             {
@@ -181,24 +181,14 @@ namespace Omron_SimTest
                 button1.Enabled = false;
                 foreach (var cl in clList)
                 {
-                    lock (thisLock)
-                    {
-                        LogWrite(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
-                        //sbLog.Append(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
-                        //textBox1.Text = sbLog.ToString();
-                    }
+                    LogWrite(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
                     cl.StartSocket();
                 }
             }
             catch (Exception ex)
             {
 
-                lock (thisLock)
-                {
-                    LogWrite(ex.Message + "\r\n");
-                    //sbLog.Append(ex.Message + "\r\n");
-                    //textBox1.Text = sbLog.ToString();
-                }
+                LogWrite(ex.Message + "\r\n");
                 foreach (var cl in clList)
                 {
                     cl.StopSocket();
@@ -229,107 +219,114 @@ namespace Omron_SimTest
             DataGridView dgv = (DataGridView)sender;
             int x = e.ColumnIndex;
             int y = e.RowIndex;
-            switch (dgv.Columns[x].Name)
+            try
+
             {
-                case dn_Particle_little:
-                    stData[y].iParticle_little = (int)dgv[x, y].Value;
-                    break;
-                case dn_Particle_Middle:
-                    stData[y].iParticle_Middle = (int)dgv[x, y].Value;
-                    break;
-                case dn_Particle_Big:
-                    stData[y].iParticle_Big = (int)dgv[x, y].Value;
-                    break;
-                case dn_Port:
-                    stData[y].iPort = (int)dgv[x, y].Value;
-                    break;
-                case dn_Error_Hard:
-                    stData[y].bError_Hard = (bool)dgv[x, y].Value;
-                    if (stData[y].bError_Hard == false) break;
-                    if (stData[y].bError_Memory == true)
-                    {
-                        _dt.Rows[y][dn_Error_Memory] = false;
-                        stData[y].bError_Memory = false;
-                    }
-                    break;
-                case dn_Error_Memory:
-                    stData[y].bError_Memory = (bool)dgv[x, y].Value;
-                    if (stData[y].bError_Memory == false) break;
-                    if (stData[y].bError_Hard == true)
-                    {
-                        _dt.Rows[y][dn_Error_Hard] = false;
-                        stData[y].bError_Hard = false;
-                    }
-                    break;
-                case dn_Mode_Run:
-                    stData[y].bMode_Run = (bool)dgv[x, y].Value;
-                    if (stData[y].bMode_Run == false) break;
-                    if (stData[y].bMode_Thr == true || stData[y].bMode_Fun == true)
-                    {
-                        dr = _dt.Rows[y];
-                        dr[dn_Mode_Thr] = false;
-                        dr[dn_Mode_Fun] = false;
-                        stData[y].bMode_Thr = false;
-                        stData[y].bMode_Fun = false;
-                    }
-                    break;
-                case dn_Mode_Thr:
-                    stData[y].bMode_Thr = (bool)dgv[x, y].Value;
-                    if (stData[y].bMode_Thr == false) break;
-                    if (stData[y].bMode_Run == true || stData[y].bMode_Fun == true)
-                    {
-                        dr = _dt.Rows[y];
-                        dr[dn_Mode_Run] = false;
-                        dr[dn_Mode_Fun] = false;
-                        stData[y].bMode_Run = false;
-                        stData[y].bMode_Fun = false;
-                    }
-                    break;
-                case dn_Mode_Fun:
-                    stData[y].bMode_Fun = (bool)dgv[x, y].Value;
-                    if (stData[y].bMode_Fun == false) break;
-                    if (stData[y].bMode_Thr == true || stData[y].bMode_Run == true)
-                    {
-                        dr = _dt.Rows[y];
-                        dr[dn_Mode_Thr] = false;
-                        dr[dn_Mode_Run] = false;
-                        stData[y].bMode_Thr = false;
-                        stData[y].bMode_Run = false;
-                    }
-                    break;
-                case dn_ENABLE:
-                    stData[y].bEnable = (bool)dgv[x, y].Value;
-                    break;
+                switch (dgv.Columns[x].Name)
+                {
+                    case dn_Particle_little:
+                        stData[y].iParticle_little = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Particle_Middle:
+                        stData[y].iParticle_Middle = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Particle_Big:
+                        stData[y].iParticle_Big = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Port:
+                        stData[y].iPort = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Error_Hard:
+                        stData[y].bError_Hard = (bool)dgv[x, y].Value;
+                        if (stData[y].bError_Hard == false) break;
+                        if (stData[y].bError_Memory == true)
+                        {
+                            _dt.Rows[y][dn_Error_Memory] = false;
+                            stData[y].bError_Memory = false;
+                        }
+                        break;
+                    case dn_Error_Memory:
+                        stData[y].bError_Memory = (bool)dgv[x, y].Value;
+                        if (stData[y].bError_Memory == false) break;
+                        if (stData[y].bError_Hard == true)
+                        {
+                            _dt.Rows[y][dn_Error_Hard] = false;
+                            stData[y].bError_Hard = false;
+                        }
+                        break;
+                    case dn_Mode_Run:
+                        stData[y].bMode_Run = (bool)dgv[x, y].Value;
+                        if (stData[y].bMode_Run == false) break;
+                        if (stData[y].bMode_Thr == true || stData[y].bMode_Fun == true)
+                        {
+                            dr = _dt.Rows[y];
+                            dr[dn_Mode_Thr] = false;
+                            dr[dn_Mode_Fun] = false;
+                            stData[y].bMode_Thr = false;
+                            stData[y].bMode_Fun = false;
+                        }
+                        break;
+                    case dn_Mode_Thr:
+                        stData[y].bMode_Thr = (bool)dgv[x, y].Value;
+                        if (stData[y].bMode_Thr == false) break;
+                        if (stData[y].bMode_Run == true || stData[y].bMode_Fun == true)
+                        {
+                            dr = _dt.Rows[y];
+                            dr[dn_Mode_Run] = false;
+                            dr[dn_Mode_Fun] = false;
+                            stData[y].bMode_Run = false;
+                            stData[y].bMode_Fun = false;
+                        }
+                        break;
+                    case dn_Mode_Fun:
+                        stData[y].bMode_Fun = (bool)dgv[x, y].Value;
+                        if (stData[y].bMode_Fun == false) break;
+                        if (stData[y].bMode_Thr == true || stData[y].bMode_Run == true)
+                        {
+                            dr = _dt.Rows[y];
+                            dr[dn_Mode_Thr] = false;
+                            dr[dn_Mode_Run] = false;
+                            stData[y].bMode_Thr = false;
+                            stData[y].bMode_Run = false;
+                        }
+                        break;
+                    case dn_ENABLE:
+                        stData[y].bEnable = (bool)dgv[x, y].Value;
+                        break;
 
 
-                case dn_Temp:
-                    stData[y].iTemp = (int)dgv[x, y].Value;
-                    break;
-                case dn_Con:
-                    stData[y].iCon = (int)dgv[x, y].Value;
-                    break;
-                case dn_DpTemp:
-                    stData[y].iDpTemp = (int)dgv[x, y].Value;
-                    break;
+                    case dn_Temp:
+                        stData[y].iTemp = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Con:
+                        stData[y].iCon = (int)dgv[x, y].Value;
+                        break;
+                    case dn_DpTemp:
+                        stData[y].iDpTemp = (int)dgv[x, y].Value;
+                        break;
 
 
-                case dn_ID_TempEnable:
-                    stData[y].bID_TempEnable = (bool)dgv[x, y].Value;
-                    break;
+                    case dn_ID_TempEnable:
+                        stData[y].bID_TempEnable = (bool)dgv[x, y].Value;
+                        break;
 
-                case dn_ID_PD50:
-                    stData[y].bID_PD50 = (bool)dgv[x, y].Value;
-                    break;
+                    case dn_ID_PD50:
+                        stData[y].bID_PD50 = (bool)dgv[x, y].Value;
+                        break;
 
-                case dn_Error_From:
-                    stData[y].bError_From = (bool)dgv[x, y].Value;
-                    break;
-                case dn_UnCalc:
-                    stData[y].bUnCalc = (bool)dgv[x, y].Value;
-                    break;
+                    case dn_Error_From:
+                        stData[y].bError_From = (bool)dgv[x, y].Value;
+                        break;
+                    case dn_UnCalc:
+                        stData[y].bUnCalc = (bool)dgv[x, y].Value;
+                        break;
 
+                }
+            }catch
+            {
+                
             }
-            dataGridView1.Invalidate();
+                dataGridView1.Invalidate();
             dataGridView1.Update();
         }
 
@@ -582,6 +579,11 @@ namespace Omron_SimTest
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
             ChangeSleepWait();
+        }
+
+        private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+                    e.Cancel = true;
         }
     }
     static class Consts
