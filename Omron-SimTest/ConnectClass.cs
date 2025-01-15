@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -103,6 +104,7 @@ namespace Omron_SimTest
                         {
                             if (PlcNodecls.bConnecting != true)
                             {
+                               
                                 // 接続要求を受け入れる
                                 TcpClient tcp = listener.AcceptTcpClient();
                                 TcpReceiveWorker rcv = new TcpReceiveWorker(tcp, this, PlcNodecls);
@@ -192,21 +194,16 @@ namespace Omron_SimTest
 
             readonly byte[] bLastBuffer = new byte[10000];
 
-
             /// <summary>
-            /// 三菱のPLC対応ルーチン
+            /// オムロン清浄度ルーチン
             /// </summary>
             /// <param name="st"></param>
             /// <returns></returns>
             bool TcpOmronZDLoop(NetworkStream st)
             {
                 int count = 0;
-
                 int iReadNum = 10;
-
                 byte[] bBuffer = new byte[10000];
-
-                //Random r1 = new Random();
 
                 string iLastTCP = tcp.Client.LocalEndPoint.ToString();
                 string sLast = iLastTCP.Substring(0, iLastTCP.IndexOf(":"));
@@ -223,6 +220,9 @@ namespace Omron_SimTest
                 }
                 if (iFormNode == -1) return false;
 
+                // 有効でない場合は戻す
+                if (FormMain.stData[iFormNode].bEnable == false ) return false;
+
                 // 読み込み
                 try
                 {
@@ -233,7 +233,6 @@ namespace Omron_SimTest
                         if (iData == 0) break;
                         count += iData;
                         Thread.Sleep(10);
-
                     }
                 }
                 catch
@@ -256,7 +255,6 @@ namespace Omron_SimTest
 
                 if (bHeaderError == true)
                 {
-
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString());
                     sb.AppendLine("BeforeCommand : ");
@@ -278,7 +276,6 @@ namespace Omron_SimTest
                     System.Diagnostics.Debug.WriteLine(sb.ToString());
                     FormMain.LogWrite(iFormNode.ToString("00") + " ERR\r\n" + sb.ToString());
 
-                    //Clipboard.SetDataObject(sb.ToString(), true);
                     return false;
                 }
 
@@ -367,7 +364,6 @@ namespace Omron_SimTest
 
                 try
                 {
-
                     FormMain.LogWrite(iFormNode.ToString("00")+" 返信：" +sResponce);
                     byte[] bytes = Encoding.ASCII.GetBytes(sResponce);
                     int iRetnum = bytes.Count();
@@ -392,9 +388,6 @@ namespace Omron_SimTest
                 }
                 return true;
             }
-
-
         }
-
     }
 }
