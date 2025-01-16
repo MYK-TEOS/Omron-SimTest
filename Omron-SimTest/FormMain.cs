@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.IO.Ports;
-using System.Management;
 
 namespace Omron_SimTest
 {
 
-    public partial class Form1 : Form
+    public partial class FormMain : Form
     {
         #region 定数
-        static int iMachineNum = 31;
+        static readonly int iMachineNum = 31;
         static int iTimerCount = 0;
-        Random rnd = new Random();
+        readonly Random rnd = new Random();
 
         const string dn_NO = "番号";
         const string dn_ENABLE = "有効";
@@ -27,7 +22,7 @@ namespace Omron_SimTest
         const string dn_Temp = "温度";
         const string dn_Con = "湿度";
         const string dn_DpTemp = "露点湿度";
-        const string dn_Port = "ポート番号";
+        const string dn_Port = "アドレス末尾";
         const string dn_Error_Hard = "ハードエラー";
         const string dn_Error_Memory = "メモリエラー";
         const string dn_Mode_Run = "RUN";
@@ -43,10 +38,10 @@ namespace Omron_SimTest
 
         DataSet _ds;
         DataTable _dt;
-        private Object thisLock = new Object();
-        StringBuilder sbLog;
+        private static readonly Object thisLock = new Object();
+        static readonly StringBuilder sbLog = new StringBuilder();
 
-        public struct mData
+        public struct MData
         {
             public int iParticle_little;        //小粒子
             public int iParticle_Middle;      //中粒子
@@ -54,7 +49,7 @@ namespace Omron_SimTest
             public int iTemp;    //温度
             public int iCon;    //湿度
             public int iDpTemp;    //露点湿度
-            public int iPort;    //ポート番号
+            public int iPort;    //アドレス末尾
 
 
             public bool bError_Hard;    // ハードエラー
@@ -70,50 +65,43 @@ namespace Omron_SimTest
 
         }
 
-        public static mData[] stData = new mData[iMachineNum];
-        List<ConnectClass> clList;
+        public static MData[] stData = new MData[iMachineNum];
+        readonly List<ConnectClass> clList;
 
-        public class ComboBoxCustomItem
-        {
-            public string Comname;
-            public string DeviceName;
-
-            public override string ToString()
-            {
-                return DeviceName;
-            }
-        }
         static bool bDataChange;
 
         #endregion
 
 
-        public Form1()
+        public FormMain()
         {
             InitializeComponent();
-            sbLog = new StringBuilder();
             clList = new List<ConnectClass>();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-           
+
             bDataChange = false;
-            for (int i = 0; i < iMachineNum; i++ )
+            for (int i = 0; i < iMachineNum; i++)
             {
                 stData[i].bEnable = true;
-                stData[i].iPort = 2323+i;
+                stData[i].iPort = 150 + i;
                 stData[i].bMode_Run = true;
-                ConnectClass cl = new ConnectClass();
-                cl.iPortRead = stData[i].iPort;
-                cl.iNode = i;
-                clList.Add(cl);
             }
-            for (int i = 0;i < 60; i++)
+
+            ConnectClass cl = new ConnectClass
+            {
+                PortRead = 2323,
+                Node = 0
+            };
+            clList.Add(cl);
+
+            for (int i = 0; i < 60; i++)
             {
                 comboBox1.Items.Add(i + 1);
             }
-            comboBox1.SelectedIndex = 60-1;
+            comboBox1.SelectedIndex = 60 - 1;
 
             // データグリッド設定
             Datainit();
@@ -134,7 +122,7 @@ namespace Omron_SimTest
             _dt.Columns.Add(dn_Temp, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_Con, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_DpTemp, Type.GetType(Consts.TYPE_INT));
-           _dt.Columns.Add(dn_Port, Type.GetType(Consts.TYPE_INT));
+            _dt.Columns.Add(dn_Port, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_Error_Hard, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Error_Memory, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Mode_Run, Type.GetType(Consts.TYPE_BOL));
@@ -146,13 +134,13 @@ namespace Omron_SimTest
             _dt.Columns.Add(dn_Error_From, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_UnCalc, Type.GetType(Consts.TYPE_BOL));
 
-
+            
             DataRow dr;
             for (int i = 0; i < iMachineNum; i++)
             {
                 dr = _dt.Rows.Add();
 
-                dr[dn_NO] = i+1;
+                dr[dn_NO] = i + 1;
                 dr[dn_ENABLE] = stData[i].bEnable;
                 dr[dn_Particle_little] = stData[i].iParticle_little;
                 dr[dn_Particle_Middle] = stData[i].iParticle_Middle;
@@ -167,12 +155,12 @@ namespace Omron_SimTest
                 dr[dn_Mode_Run] = stData[i].bMode_Run;
                 dr[dn_Mode_Thr] = stData[i].bMode_Thr;
                 dr[dn_Mode_Fun] = stData[i].bMode_Fun;
-                
+
                 dr[dn_ID_TempEnable] = stData[i].bID_TempEnable;
                 dr[dn_ID_PD50] = stData[i].bID_PD50;
                 dr[dn_Error_From] = stData[i].bError_From;
                 dr[dn_UnCalc] = stData[i].bUnCalc;
-           }
+            }
 
             dataGridView1.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dataGridView1.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Raised;
@@ -180,12 +168,12 @@ namespace Omron_SimTest
             dataGridView1.ColumnHeadersHeight = dataGridView1.Size.Height;
             dataGridView1.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-            
+
             dataGridView1.DataSource = _dt;
             dataGridView1.Columns[dn_NO].ReadOnly = true;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Button1_Click(object sender, EventArgs e)
         {
             try
             {
@@ -193,23 +181,14 @@ namespace Omron_SimTest
                 button1.Enabled = false;
                 foreach (var cl in clList)
                 {
-                    lock (thisLock)
-                    {
-                        sbLog.Append(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.iPortRead+"をオープンしました。" + "\r\n");
-                        textBox1.Text = sbLog.ToString();
-                    }
+                    LogWrite(DateTime.Now.ToLongTimeString() + "  : ポート" + cl.PortRead + "をオープンしました。" + "\r\n");
                     cl.StartSocket();
                 }
-                //backgroundWorker1.RunWorkerAsync();
             }
-            catch ( Exception ex)
+            catch (Exception ex)
             {
 
-                lock (thisLock)
-                {
-                    sbLog.Append(ex.Message + "\r\n");
-                    textBox1.Text = sbLog.ToString();
-                }
+                LogWrite(ex.Message + "\r\n");
                 foreach (var cl in clList)
                 {
                     cl.StopSocket();
@@ -218,280 +197,199 @@ namespace Omron_SimTest
             }
         }
 
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        public static void LogWrite(string s)
         {
-            Byte[] bBuffer = new Byte[1024];
-            //String sSetData;
-            string Cmd;
-            //int iData;
-            int bytesRead;
-            int iReadNum;
-            while (e.Cancel == false)
-            {
-                // 終了判定
-                if (backgroundWorker1.CancellationPending)
-                {
-                    e.Cancel = true;
-                    continue;
-                }
-                // バッファクリア
-                for (int i = 0; i < bBuffer.Length; i++)
-                {
-                    bBuffer[i] = 0;
-                }
-
-                // 読み込み
-                iReadNum = serialPort1.BytesToRead ;
-                System.Threading.Thread.Sleep(50);  // 読み込みバッファに読み込む＆次回への時間待ち
-                if (iReadNum == 0)  continue;
-
-                // データ読み込み
-                bytesRead = 0;
-                while (true)
-                {
-                    if (serialPort1.BytesToRead == 0) break;
-                    bBuffer[bytesRead] = (byte)serialPort1.ReadByte();
-                    bytesRead++;
-                    System.Threading.Thread.Sleep(0);
-
-                    if (bBuffer[bytesRead - 1] == 0x0d) break;
-                }
-
-                Cmd = ASCIIEncoding.ASCII.GetString(bBuffer, 3, 2);
-                SendLogByte("Read ", bBuffer, bytesRead);
-
-                // コマンド先頭が@でなければ応答しない
-                if (bBuffer[0] != '@') continue;
-                
-                // アドレス取得
-                //int iAddr = (bBuffer[1] - '0') * 10 + bBuffer[2] - '0' - 1;
-                byte[] bData = new byte[2];
-                bData[0] = bBuffer[1]; bData[1] = bBuffer[2];
-                string sAd = System.Text.Encoding.GetEncoding(932).GetString(bData);
-                int iAddr = -1;
-                try
-                {
-                    iAddr = Convert.ToInt32(sAd, 16) - 1;
-                }
-                catch
-                {
-                }
-
-                // 無効時は応答しない
-                if ( iAddr >= 0) if (stData[iAddr].bEnable == false) continue;
-                
-                // スリープ設定
-                if ( checkBox4.CheckState == CheckState.Checked)
-                {
-                    int iTimer = 1000;
-                    Int32.TryParse(textBox2.Text,  out iTimer);
-                    System.Threading.Thread.Sleep(iTimer);
-                }
-            }
-           
-        }
-
-        private void SendLogByte ( string sPre , Byte[] bData , int iNum)
-        {
-            if (checkBox1.Checked == false) return;
-            string sOut ="";
-            for ( int i = 0 ; i < iNum ; i++)
-            {
-                //sOut = sOut + bData[i].ToString("X")+" ";
-                sOut = sOut + string.Format("{0,0:X2} ", Convert.ToInt32(bData[i]));
-            }
-            sOut = sOut + " ASCII: (" + ASCIIEncoding.ASCII.GetString(bData, 0,iNum);
-
             lock (thisLock)
             {
-                if (sbLog.Length > 100000) sbLog.Clear();//一定量でログをクリア
-                sbLog.Append(DateTime.Now.ToLongTimeString() + "  : " + sPre + sOut + "\r\n");
+                sbLog.Append(s + "\r\n");
             }
         }
 
-        /// <summary>
-        /// 終了処理
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            backgroundWorker1.CancelAsync();
-            while ( backgroundWorker1.CancellationPending == false )
-            {
-                System.Threading.Thread.Sleep(20);
-            }
-        }
+
+
 
         /// <summary>
         /// 値変更
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private void DataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             DataRow dr;
             DataGridView dgv = (DataGridView)sender;
             int x = e.ColumnIndex;
             int y = e.RowIndex;
-            switch (dgv.Columns[x].Name)
+            try
+
             {
-                case dn_Particle_little:
-                    stData[y].iParticle_little = (int)dgv[x, y].Value;
-                    break;
-                case dn_Particle_Middle:
-                    stData[y].iParticle_Middle  = (int)dgv[x, y].Value;
-                    break;
-                case dn_Particle_Big:
-                    stData[y].iParticle_Big = (int)dgv[x, y].Value;
-                    break;
-                case dn_Port:
-                    stData[y].iPort  = (int)dgv[x, y].Value;
-                    break;
-                case dn_Error_Hard:
-                    stData[y].bError_Hard = (bool)dgv[x, y].Value;
-                    if (stData[y].bError_Hard == false) break;
-                    if (stData[y].bError_Memory == true )
-                    {
-                        _dt.Rows[y][dn_Error_Memory] = false;
-                        stData[y].bError_Memory = false;
-                    }
-                    break;
-                case dn_Error_Memory:
-                    stData[y].bError_Memory = (bool)dgv[x, y].Value;
-                    if (stData[y].bError_Memory == false) break;
-                    if (stData[y].bError_Hard == true)
-                    {
-                        _dt.Rows[y][dn_Error_Hard] = false;
-                        stData[y].bError_Hard = false;
-                    }
-                    break;
-                case dn_Mode_Run:
-                    stData[y].bMode_Run= (bool)dgv[x, y].Value;
-                    if (stData[y].bMode_Run == false) break;
-                    if (stData[y].bMode_Thr == true || stData[y].bMode_Fun == true)
-                    {
-                        dr = _dt.Rows[y];
-                        dr[dn_Mode_Thr] = false;
-                        dr[dn_Mode_Fun] = false;
-                        stData[y].bMode_Thr = false;
-                        stData[y].bMode_Fun = false;
-                    }
-                    break;
-                case dn_Mode_Thr:
-                    stData[y].bMode_Thr = (bool)dgv[x, y].Value;
-                    if (stData[y].bMode_Thr == false) break;
-                    if (stData[y].bMode_Run == true || stData[y].bMode_Fun == true)
-                    {
-                        dr = _dt.Rows[y];
-                        dr[dn_Mode_Run] = false;
-                        dr[dn_Mode_Fun] = false;
-                        stData[y].bMode_Run = false;
-                        stData[y].bMode_Fun = false;
-                    }
-                    break;
-                case dn_Mode_Fun:
-                    stData[y].bMode_Fun = (bool)dgv[x, y].Value;
-                    if (stData[y].bMode_Fun == false) break;
-                    if (stData[y].bMode_Thr == true || stData[y].bMode_Run == true)
-                    {
-                        dr = _dt.Rows[y];
-                        dr[dn_Mode_Thr] = false;
-                        dr[dn_Mode_Run] = false;
-                        stData[y].bMode_Thr = false;
-                        stData[y].bMode_Run = false;
-                    }
-                    break;
-                case dn_ENABLE:
-                    stData[y].bEnable= (bool)dgv[x, y].Value;
-                    break;
+                switch (dgv.Columns[x].Name)
+                {
+                    case dn_Particle_little:
+                        stData[y].iParticle_little = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Particle_Middle:
+                        stData[y].iParticle_Middle = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Particle_Big:
+                        stData[y].iParticle_Big = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Port:
+                        stData[y].iPort = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Error_Hard:
+                        stData[y].bError_Hard = (bool)dgv[x, y].Value;
+                        if (stData[y].bError_Hard == false) break;
+                        if (stData[y].bError_Memory == true)
+                        {
+                            _dt.Rows[y][dn_Error_Memory] = false;
+                            stData[y].bError_Memory = false;
+                        }
+                        break;
+                    case dn_Error_Memory:
+                        stData[y].bError_Memory = (bool)dgv[x, y].Value;
+                        if (stData[y].bError_Memory == false) break;
+                        if (stData[y].bError_Hard == true)
+                        {
+                            _dt.Rows[y][dn_Error_Hard] = false;
+                            stData[y].bError_Hard = false;
+                        }
+                        break;
+                    case dn_Mode_Run:
+                        stData[y].bMode_Run = (bool)dgv[x, y].Value;
+                        if (stData[y].bMode_Run == false) break;
+                        if (stData[y].bMode_Thr == true || stData[y].bMode_Fun == true)
+                        {
+                            dr = _dt.Rows[y];
+                            dr[dn_Mode_Thr] = false;
+                            dr[dn_Mode_Fun] = false;
+                            stData[y].bMode_Thr = false;
+                            stData[y].bMode_Fun = false;
+                        }
+                        break;
+                    case dn_Mode_Thr:
+                        stData[y].bMode_Thr = (bool)dgv[x, y].Value;
+                        if (stData[y].bMode_Thr == false) break;
+                        if (stData[y].bMode_Run == true || stData[y].bMode_Fun == true)
+                        {
+                            dr = _dt.Rows[y];
+                            dr[dn_Mode_Run] = false;
+                            dr[dn_Mode_Fun] = false;
+                            stData[y].bMode_Run = false;
+                            stData[y].bMode_Fun = false;
+                        }
+                        break;
+                    case dn_Mode_Fun:
+                        stData[y].bMode_Fun = (bool)dgv[x, y].Value;
+                        if (stData[y].bMode_Fun == false) break;
+                        if (stData[y].bMode_Thr == true || stData[y].bMode_Run == true)
+                        {
+                            dr = _dt.Rows[y];
+                            dr[dn_Mode_Thr] = false;
+                            dr[dn_Mode_Run] = false;
+                            stData[y].bMode_Thr = false;
+                            stData[y].bMode_Run = false;
+                        }
+                        break;
+                    case dn_ENABLE:
+                        stData[y].bEnable = (bool)dgv[x, y].Value;
+                        break;
 
 
-                case dn_Temp:
-                    stData[y].iTemp = (int)dgv[x, y].Value;
-                    break;
-                case dn_Con:
-                    stData[y].iCon = (int)dgv[x, y].Value;
-                    break;
-                case dn_DpTemp:
-                    stData[y].iDpTemp = (int)dgv[x, y].Value;
-                    break;
+                    case dn_Temp:
+                        stData[y].iTemp = (int)dgv[x, y].Value;
+                        break;
+                    case dn_Con:
+                        stData[y].iCon = (int)dgv[x, y].Value;
+                        break;
+                    case dn_DpTemp:
+                        stData[y].iDpTemp = (int)dgv[x, y].Value;
+                        break;
 
 
-                case dn_ID_TempEnable:
-                    stData[y].bID_TempEnable= (bool)dgv[x, y].Value;
-                    break;
+                    case dn_ID_TempEnable:
+                        stData[y].bID_TempEnable = (bool)dgv[x, y].Value;
+                        break;
 
-                case dn_ID_PD50:
-                    stData[y].bID_PD50 = (bool)dgv[x, y].Value;
-                    break;
+                    case dn_ID_PD50:
+                        stData[y].bID_PD50 = (bool)dgv[x, y].Value;
+                        break;
 
-                case dn_Error_From:
-                    stData[y].bError_From = (bool)dgv[x, y].Value;
-                    break;
-                case dn_UnCalc:
-                    stData[y].bUnCalc = (bool)dgv[x, y].Value;
-                    break;
+                    case dn_Error_From:
+                        stData[y].bError_From = (bool)dgv[x, y].Value;
+                        break;
+                    case dn_UnCalc:
+                        stData[y].bUnCalc = (bool)dgv[x, y].Value;
+                        break;
 
+                }
+            }catch
+            {
+                
             }
-            dataGridView1.Invalidate();
+                dataGridView1.Invalidate();
             dataGridView1.Update();
         }
 
-        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        private void ToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             if (dataGridView1.SelectedCells.Count == 0) return;
             if (dataGridView1.SelectedCells.IsReadOnly) return;
-            DialogValueIO diag = new DialogValueIO();
-            diag._cells = dataGridView1.SelectedCells;
+            DialogValueIO diag = new DialogValueIO
+            {
+                _cells = dataGridView1.SelectedCells
+            };
             diag.ShowDialog();
         }
 
         /// <summary>
-        /// 
+        /// タイマー処理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void timer1_Tick(object sender, EventArgs e)
+        private void Timer1_Tick(object sender, EventArgs e)
         {
             DataRow dr;
-            if (textBox1.TextLength != sbLog.Length)
-            {
-                string sTmp;
-                lock (thisLock)
-                {
-                    sTmp = sbLog.ToString();
-                }
-                string sTmp_textbox = textBox1.Text;
 
-                int iLength = sTmp.Length - sTmp_textbox.Length;
-                if (iLength > 0)
+            if (checkBox1.Checked == true)
+            {
+                // ログ処理
+                if (textBox1.TextLength != sbLog.Length)
                 {
-                    string sOut = sTmp.Substring(sTmp_textbox.Length, sTmp.Length - sTmp_textbox.Length);
-                    textBox1.AppendText(sOut);
-                    if ( textBox1.TextLength == sTmp_textbox.Length)
+                    string sTmp;
+                    lock (thisLock)
+                    {
+                        sTmp = sbLog.ToString();
+                    }
+                    string sTmp_textbox = textBox1.Text;
+
+                    int iLength = sTmp.Length - sTmp_textbox.Length;
+                    if (iLength > 0)
+                    {
+                        string sOut = sTmp.Substring(sTmp_textbox.Length, sTmp.Length - sTmp_textbox.Length);
+                        textBox1.AppendText(sOut);
+                        if (textBox1.TextLength == sTmp_textbox.Length)
+                        {
+                            sbLog.Clear();
+                            textBox1.Text = "";
+                        }
+                    }
+                    else
                     {
                         sbLog.Clear();
                         textBox1.Text = "";
                     }
-                }
-                else
-                {
-                    sbLog.Clear();
-                    textBox1.Text = "";
-                }
 
-                //カレット位置を末尾に移動
-                this.textBox1.SelectionStart = textBox1.Text.Length;
-                //カレット位置までスクロール
-                this.textBox1.ScrollToCaret();
+                    //カレット位置を末尾に移動
+                    this.textBox1.SelectionStart = textBox1.Text.Length;
+                    //カレット位置までスクロール
+                    this.textBox1.ScrollToCaret();
+                }
             }
-
             // 値のランダム更新
             if (checkBox2.Checked)
             {
                 iTimerCount++;
-                
+
                 if (iTimerCount >= comboBox1.SelectedIndex)
                 {
                     iTimerCount = 0;
@@ -510,7 +408,7 @@ namespace Omron_SimTest
             }
 
             // 画面更新
-            if ( bDataChange == true )
+            if (bDataChange == true)
             {
                 for (int i = 0; i < iMachineNum; i++)
                 {
@@ -547,7 +445,7 @@ namespace Omron_SimTest
             dataGridView1.Width = this.Width - dataGridView1.Left * 2;
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void Button2_Click(object sender, EventArgs e)
         {
 
             lock (thisLock)
@@ -562,7 +460,7 @@ namespace Omron_SimTest
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void button3_Click(object sender, EventArgs e)
+        private void Button3_Click(object sender, EventArgs e)
         {
             StringBuilder sOut = new StringBuilder();
             for (int y = 0; y < iMachineNum; y++)
@@ -578,19 +476,19 @@ namespace Omron_SimTest
             }
 
             Clipboard.SetDataObject(sOut.ToString(), true);
-            
+
         }
 
-         /// <summary>
+        /// <summary>
         /// クリップボードからの読み込み
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void button4_Click(object sender, EventArgs e)
+        private void Button4_Click(object sender, EventArgs e)
         {
-            
+
             textBox1.Text = "";
-            
+
             IDataObject data = Clipboard.GetDataObject();
 
             if (data.GetDataPresent(DataFormats.Text))
@@ -634,7 +532,7 @@ namespace Omron_SimTest
             }
         }
 
-        private void dataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
+        private void DataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
         {
             if (dataGridView1.CurrentCell.ValueType == typeof(Boolean))
             {
@@ -643,13 +541,14 @@ namespace Omron_SimTest
             }
         }
 
-        private void textBox2_KeyPress(object sender, KeyPressEventArgs e)
+        private void TextBox2_KeyPress(object sender, KeyPressEventArgs e)
         {
             //0～9と、バックスペース以外の時は、イベントをキャンセルする
             if ((e.KeyChar < '0' || '9' < e.KeyChar) && e.KeyChar != '\b')
             {
                 e.Handled = true;
             }
+            ChangeSleepWait();
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
@@ -660,11 +559,37 @@ namespace Omron_SimTest
             }
 
         }
+
+        private void checkBox4_CheckedChanged(object sender, EventArgs e)
+        {
+            ChangeSleepWait();
+        }
+
+        private void ChangeSleepWait()
+        {
+            bool btry = int.TryParse(textBox2.Text, out int n);
+            if (!btry) return;
+            if (checkBox4.Checked == false) n = 0;
+            foreach (var cl in clList)
+            {
+                cl.SleepSec = n;
+            }
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            ChangeSleepWait();
+        }
+
+        private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+                    e.Cancel = true;
+        }
     }
     static class Consts
     {
         public const string TYPE_INT = "System.Int32";
         public const string TYPE_STR = "System.String";
-        public const string TYPE_BOL = "System.Boolean";        
+        public const string TYPE_BOL = "System.Boolean";
     }
 }
