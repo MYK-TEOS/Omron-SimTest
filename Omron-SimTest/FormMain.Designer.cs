@@ -1,4 +1,4 @@
-﻿namespace Omron_SimTest
+﻿namespace Omron_Emu
 {
     partial class FormMain
     {
@@ -187,7 +187,7 @@
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(59, 19);
             this.textBox2.TabIndex = 13;
-            this.textBox2.Text = "100";
+            this.textBox2.Text = "27";
             this.textBox2.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             this.textBox2.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TextBox2_KeyPress);
@@ -273,7 +273,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(800, 300);
             this.Name = "FormMain";
-            this.Text = "オムロン清浄度シミュレータ V1.0";
+            this.Text = "オムロン清浄度センサ　エミュレータ";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Resize += new System.EventHandler(this.Form1_Resize);

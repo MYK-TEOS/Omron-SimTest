@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // アセンブリに関する一般情報は以下の属性セットをとおして制御されます。
 // アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更してください。
-[assembly: AssemblyTitle("Omron-SimTest")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("オムロン清浄度センサZD-PD03エミュレータ")]
+[assembly: AssemblyDescription("オムロン社製の清浄度センサの通信をエミュレートします")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Omron-SimTest")]
+[assembly: AssemblyCompany("(株)大気社")]
+[assembly: AssemblyProduct("")]
 [assembly: AssemblyCopyright("Copyright ©  2024 MYK")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

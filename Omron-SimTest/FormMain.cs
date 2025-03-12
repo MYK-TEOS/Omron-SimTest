@@ -4,7 +4,7 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Omron_SimTest
+namespace Omron_Emu
 {
 
     public partial class FormMain : Form
@@ -497,37 +497,47 @@ namespace Omron_SimTest
                 string[] stArrayData = sText.Split('\n');
                 int yMax = stArrayData.Length;
                 if (yMax > iMachineNum) yMax = iMachineNum;
-
+                int x=0, y=0;
+                string sStr="";
                 // データを確認する
-                for (int y = 0; y < yMax; y++)
+                try
                 {
-                    string stData = stArrayData[y];
-                    string[] stxData = stData.Split('\t');
-                    int xLength = stxData.Length;
-                    if (xLength > dataGridView1.ColumnCount) xLength = dataGridView1.ColumnCount;
-
-                    for (int x = 0; x < xLength; x++)
+                    for (y = 0; y < yMax; y++)
                     {
-                        Type t = dataGridView1[x, y].ValueType;
-                        if (stxData[x] == "") continue;
+                        string stData = stArrayData[y];
+                        string[] stxData = stData.Split('\t');
+                        int xLength = stxData.Length;
+                        if (xLength > dataGridView1.ColumnCount) xLength = dataGridView1.ColumnCount;
 
-                        if (t == typeof(Int32))
+                        for (x = 0; x < xLength; x++)
                         {
-                            dataGridView1[x, y].Value = Int32.Parse(stxData[x]);
-                        }
-                        if (t == typeof(Boolean))
-                        {
-                            bool b = false;
-                            if (string.Compare(stxData[x], "true", true) == 0) b = true;
-                            dataGridView1[x, y].Value = b;
-                        }
-                        if (t == typeof(Double))
-                        {
-                            dataGridView1[x, y].Value = double.Parse(stxData[x]);
+                            sStr = stxData[x];
+                            Type t = dataGridView1[x, y].ValueType;
+                            if (stxData[x] == "") continue;
+
+                            if (t == typeof(Int32))
+                            {
+                                dataGridView1[x, y].Value = Int32.Parse(stxData[x]);
+                            }
+                            if (t == typeof(Boolean))
+                            {
+                                bool b = false;
+                                if (string.Compare(stxData[x], "true", true) == 0) b = true;
+                                dataGridView1[x, y].Value = b;
+                            }
+                            if (t == typeof(Double))
+                            {
+                                dataGridView1[x, y].Value = double.Parse(stxData[x]);
+                            }
+
                         }
 
                     }
-
+                }
+                catch 
+                {
+                    string sMes = "(x :" + x.ToString() + " ,y : " + y.ToString() + ") : " + sStr;
+                    MessageBox.Show("設定値に誤りがあります \r\n"+sMes);
                 }
             }
         }

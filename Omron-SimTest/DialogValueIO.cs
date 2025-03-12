@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace Omron_SimTest
+namespace Omron_Emu
 {
     public partial class DialogValueIO : Form
     {

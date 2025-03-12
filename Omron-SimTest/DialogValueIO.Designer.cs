@@ -1,4 +1,4 @@
-﻿namespace Omron_SimTest
+﻿namespace Omron_Emu
 {
     partial class DialogValueIO
     {
