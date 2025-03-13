@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -19,7 +20,7 @@ namespace Omron_Emu
 
         TcpReceive tRes;        // 読込用クラス
 
-        bool bConnecting;
+        bool bConnecting;       // 接続中
 
 
         /// <summary>
@@ -170,7 +171,21 @@ namespace Omron_Emu
                 PlcNodecls.bConnecting = true;
                 string sLocalEndIP = tcp.Client.LocalEndPoint.ToString();
 
-                FormMain.LogWrite(sLocalEndIP + " 接続" );
+                string sLast = sLocalEndIP.Substring(0, sLocalEndIP.IndexOf(":"));
+                string[] sDiv = sLast.Split('.');
+
+                int iPort = int.Parse(sDiv[sDiv.Length - 1]);
+                int iFormNode = -1;
+                for (int i = 0; i < FormMain.stData.Length; i++)
+                {
+                    if (FormMain.stData[i].iPort != iPort) continue;
+                    iFormNode = i;
+                    break;
+                }
+                string sNode = (iFormNode + 1).ToString("00");
+
+
+                FormMain.LogWrite(sNode +" 接続：" +sLocalEndIP );
                 while (bRet == true)
                 {
                     if (rcv.stop_flg == true) break;
@@ -183,7 +198,7 @@ namespace Omron_Emu
 
                     Thread.Sleep(10);
                 }
-                FormMain.LogWrite(sLocalEndIP + " 切断");
+                FormMain.LogWrite(sNode + " 切断：" + sLocalEndIP+"\r\n");
 
                 tcp.Close();
                 st.Dispose();
@@ -251,7 +266,8 @@ namespace Omron_Emu
 
                 string CommandAll = Encoding.Default.GetString(bBuffer).TrimEnd('\0');
                 CommandAll = CommandAll.TrimEnd('\n').TrimEnd('\r');
-                FormMain.LogWrite(iFormNode.ToString("00") + " 受信：" + CommandAll);
+                string sNode = (iFormNode+1).ToString("00");
+                FormMain.LogWrite( sNode + " 受信：" + CommandAll);
 
                 if (bHeaderError == true)
                 {
@@ -274,7 +290,7 @@ namespace Omron_Emu
                     }
                     sb.AppendLine("");
                     System.Diagnostics.Debug.WriteLine(sb.ToString());
-                    FormMain.LogWrite(iFormNode.ToString("00") + " ERR\r\n" + sb.ToString());
+                    FormMain.LogWrite( sNode + " ERR\r\n" + sb.ToString());
 
                     return false;
                 }
@@ -364,7 +380,14 @@ namespace Omron_Emu
 
                 try
                 {
-                    FormMain.LogWrite(iFormNode.ToString("00")+" 返信：" +sResponce);
+                    if (sResponce.EndsWith("\r\n"))
+                    {
+                        FormMain.LogWrite(sNode + " 返信：" + sResponce.Substring(0,sResponce.Length-2));
+                    }
+                    else
+                    {
+                        FormMain.LogWrite(sNode + " 返信：" + sResponce);
+                    }
                     byte[] bytes = Encoding.ASCII.GetBytes(sResponce);
                     int iRetnum = bytes.Count();
                     // 返信ウェイト

@@ -14,6 +14,8 @@ namespace Omron_Emu
         static int iTimerCount = 0;
         readonly Random rnd = new Random();
 
+        private static readonly int MaxLogSize = 1024 * 1024; // 1MB
+
         const string dn_NO = "番号";
         const string dn_ENABLE = "有効";
         const string dn_Particle_little = "小粒子";
@@ -25,7 +27,6 @@ namespace Omron_Emu
         const string dn_Port = "アドレス末尾";
         const string dn_Error_Hard = "ハードエラー";
         const string dn_Error_Memory = "メモリエラー";
-        const string dn_Mode_Run = "RUN";
         const string dn_Mode_Thr = "THR";
         const string dn_Mode_Fun = "FUN";
         const string dn_ID_TempEnable = "温湿度センサ有";
@@ -51,10 +52,8 @@ namespace Omron_Emu
             public int iDpTemp;    //露点湿度
             public int iPort;    //アドレス末尾
 
-
             public bool bError_Hard;    // ハードエラー
             public bool bError_Memory;  // メモリエラー
-            public bool bMode_Run;      // RUN
             public bool bMode_Thr;      // THR
             public bool bMode_Fun;      // FUN
             public bool bID_TempEnable;  // 温湿度センサ有
@@ -62,7 +61,6 @@ namespace Omron_Emu
             public bool bError_From;    // From異常
             public bool bEnable;        // 有効
             public bool bUnCalc;        // 未計測
-
         }
 
         public static MData[] stData = new MData[iMachineNum];
@@ -87,7 +85,6 @@ namespace Omron_Emu
             {
                 stData[i].bEnable = true;
                 stData[i].iPort = 150 + i;
-                stData[i].bMode_Run = true;
             }
 
             ConnectClass cl = new ConnectClass
@@ -111,8 +108,9 @@ namespace Omron_Emu
 
         void Datainit()
         {
-            _ds = new DataSet("PLCSetting");
-            _dt = _ds.Tables.Add("PLCTable");
+            // Datagridview 初期化
+            _ds = new DataSet("ZnSetting");
+            _dt = _ds.Tables.Add("ZnTable");
 
             _dt.Columns.Add(dn_NO, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_ENABLE, Type.GetType(Consts.TYPE_BOL));
@@ -125,7 +123,6 @@ namespace Omron_Emu
             _dt.Columns.Add(dn_Port, Type.GetType(Consts.TYPE_INT));
             _dt.Columns.Add(dn_Error_Hard, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Error_Memory, Type.GetType(Consts.TYPE_BOL));
-            _dt.Columns.Add(dn_Mode_Run, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Mode_Thr, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_Mode_Fun, Type.GetType(Consts.TYPE_BOL));
 
@@ -152,7 +149,6 @@ namespace Omron_Emu
                 dr[dn_Port] = stData[i].iPort;
                 dr[dn_Error_Hard] = stData[i].bError_Hard;
                 dr[dn_Error_Memory] = stData[i].bError_Memory;
-                dr[dn_Mode_Run] = stData[i].bMode_Run;
                 dr[dn_Mode_Thr] = stData[i].bMode_Thr;
                 dr[dn_Mode_Fun] = stData[i].bMode_Fun;
 
@@ -201,11 +197,17 @@ namespace Omron_Emu
         {
             lock (thisLock)
             {
-                sbLog.Append(s + "\r\n");
+
+                if (sbLog.Length > MaxLogSize)
+                {
+                    // 前半部分を削除
+                    sbLog.Remove(0, sbLog.Length / 2);
+                }
+                string timeString = DateTime.Now.ToString("HH:mm:ss.fff  ");
+                sbLog.Append(timeString +s + "\r\n");
+
             }
         }
-
-
 
 
         /// <summary>
@@ -220,22 +222,25 @@ namespace Omron_Emu
             int x = e.ColumnIndex;
             int y = e.RowIndex;
             try
-
             {
                 switch (dgv.Columns[x].Name)
                 {
                     case dn_Particle_little:
                         stData[y].iParticle_little = (int)dgv[x, y].Value;
                         break;
+
                     case dn_Particle_Middle:
                         stData[y].iParticle_Middle = (int)dgv[x, y].Value;
                         break;
+
                     case dn_Particle_Big:
                         stData[y].iParticle_Big = (int)dgv[x, y].Value;
                         break;
+
                     case dn_Port:
                         stData[y].iPort = (int)dgv[x, y].Value;
                         break;
+
                     case dn_Error_Hard:
                         stData[y].bError_Hard = (bool)dgv[x, y].Value;
                         if (stData[y].bError_Hard == false) break;
@@ -245,6 +250,7 @@ namespace Omron_Emu
                             stData[y].bError_Memory = false;
                         }
                         break;
+
                     case dn_Error_Memory:
                         stData[y].bError_Memory = (bool)dgv[x, y].Value;
                         if (stData[y].bError_Memory == false) break;
@@ -254,57 +260,43 @@ namespace Omron_Emu
                             stData[y].bError_Hard = false;
                         }
                         break;
-                    case dn_Mode_Run:
-                        stData[y].bMode_Run = (bool)dgv[x, y].Value;
-                        if (stData[y].bMode_Run == false) break;
-                        if (stData[y].bMode_Thr == true || stData[y].bMode_Fun == true)
-                        {
-                            dr = _dt.Rows[y];
-                            dr[dn_Mode_Thr] = false;
-                            dr[dn_Mode_Fun] = false;
-                            stData[y].bMode_Thr = false;
-                            stData[y].bMode_Fun = false;
-                        }
-                        break;
+
                     case dn_Mode_Thr:
                         stData[y].bMode_Thr = (bool)dgv[x, y].Value;
                         if (stData[y].bMode_Thr == false) break;
-                        if (stData[y].bMode_Run == true || stData[y].bMode_Fun == true)
+                        if (stData[y].bMode_Fun == true)
                         {
                             dr = _dt.Rows[y];
-                            dr[dn_Mode_Run] = false;
                             dr[dn_Mode_Fun] = false;
-                            stData[y].bMode_Run = false;
                             stData[y].bMode_Fun = false;
                         }
                         break;
+
                     case dn_Mode_Fun:
                         stData[y].bMode_Fun = (bool)dgv[x, y].Value;
                         if (stData[y].bMode_Fun == false) break;
-                        if (stData[y].bMode_Thr == true || stData[y].bMode_Run == true)
+                        if (stData[y].bMode_Thr == true )
                         {
                             dr = _dt.Rows[y];
                             dr[dn_Mode_Thr] = false;
-                            dr[dn_Mode_Run] = false;
                             stData[y].bMode_Thr = false;
-                            stData[y].bMode_Run = false;
                         }
                         break;
                     case dn_ENABLE:
                         stData[y].bEnable = (bool)dgv[x, y].Value;
                         break;
 
-
                     case dn_Temp:
                         stData[y].iTemp = (int)dgv[x, y].Value;
                         break;
+
                     case dn_Con:
                         stData[y].iCon = (int)dgv[x, y].Value;
                         break;
+
                     case dn_DpTemp:
                         stData[y].iDpTemp = (int)dgv[x, y].Value;
                         break;
-
 
                     case dn_ID_TempEnable:
                         stData[y].bID_TempEnable = (bool)dgv[x, y].Value;
@@ -317,16 +309,17 @@ namespace Omron_Emu
                     case dn_Error_From:
                         stData[y].bError_From = (bool)dgv[x, y].Value;
                         break;
+
                     case dn_UnCalc:
                         stData[y].bUnCalc = (bool)dgv[x, y].Value;
                         break;
-
                 }
-            }catch
+            }catch (Exception ex)
             {
-                
+                // 異常があった場合
+                MessageBox.Show(ex.Message);
             }
-                dataGridView1.Invalidate();
+            dataGridView1.Invalidate();
             dataGridView1.Update();
         }
 
@@ -375,8 +368,13 @@ namespace Omron_Emu
                     }
                     else
                     {
-                        sbLog.Clear();
-                        textBox1.Text = "";
+                        // ログが減ってた時の処理
+                        textBox1.Text = sTmp;
+                        // カーソル位置を文字列の最後に設定
+                        textBox1.SelectionStart = textBox1.Text.Length;
+
+                        // カーソル位置までスクロール
+                        textBox1.ScrollToCaret();
                     }
 
                     //カレット位置を末尾に移動
@@ -385,6 +383,7 @@ namespace Omron_Emu
                     this.textBox1.ScrollToCaret();
                 }
             }
+
             // 値のランダム更新
             if (checkBox2.Checked)
             {
@@ -425,7 +424,7 @@ namespace Omron_Emu
                     dr[dn_Port] = stData[i].iPort;
                     dr[dn_Error_Hard] = stData[i].bError_Hard;
                     dr[dn_Error_Memory] = stData[i].bError_Memory;
-                    dr[dn_Mode_Run] = stData[i].bMode_Run;
+                    //dr[dn_Mode_Run] = stData[i].bMode_Run;
                     dr[dn_Mode_Thr] = stData[i].bMode_Thr;
                     dr[dn_Mode_Fun] = stData[i].bMode_Fun;
 
@@ -486,9 +485,7 @@ namespace Omron_Emu
         /// <param name="e"></param>
         private void Button4_Click(object sender, EventArgs e)
         {
-
             textBox1.Text = "";
-
             IDataObject data = Clipboard.GetDataObject();
 
             if (data.GetDataPresent(DataFormats.Text))
@@ -499,6 +496,7 @@ namespace Omron_Emu
                 if (yMax > iMachineNum) yMax = iMachineNum;
                 int x=0, y=0;
                 string sStr="";
+
                 // データを確認する
                 try
                 {
@@ -529,9 +527,7 @@ namespace Omron_Emu
                             {
                                 dataGridView1[x, y].Value = double.Parse(stxData[x]);
                             }
-
                         }
-
                     }
                 }
                 catch 
@@ -567,7 +563,6 @@ namespace Omron_Emu
             {
                 cl.StopSocket();
             }
-
         }
 
         private void checkBox4_CheckedChanged(object sender, EventArgs e)
@@ -579,6 +574,7 @@ namespace Omron_Emu
         {
             bool btry = int.TryParse(textBox2.Text, out int n);
             if (!btry) return;
+
             if (checkBox4.Checked == false) n = 0;
             foreach (var cl in clList)
             {
@@ -593,9 +589,10 @@ namespace Omron_Emu
 
         private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
-                    e.Cancel = true;
+            e.Cancel = true;
         }
     }
+
     static class Consts
     {
         public const string TYPE_INT = "System.Int32";
