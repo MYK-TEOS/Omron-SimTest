@@ -131,7 +131,7 @@ namespace Omron_Emu
             _dt.Columns.Add(dn_Error_From, Type.GetType(Consts.TYPE_BOL));
             _dt.Columns.Add(dn_UnCalc, Type.GetType(Consts.TYPE_BOL));
 
-            
+
             DataRow dr;
             for (int i = 0; i < iMachineNum; i++)
             {
@@ -530,7 +530,7 @@ namespace Omron_Emu
                         }
                     }
                 }
-                catch 
+                catch
                 {
                     string sMes = "(x :" + x.ToString() + " ,y : " + y.ToString() + ") : " + sStr;
                     MessageBox.Show("設定値に誤りがあります \r\n"+sMes);
@@ -590,6 +590,21 @@ namespace Omron_Emu
         private void dataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
             e.Cancel = true;
+        }
+
+        public int Add(int a, int b)
+        {
+            return a + b;
+        }
+
+        public int Subtract(int a, int b)
+        {
+            return a - b;
+        }
+
+        public double RELU(double x)
+        {
+            return x > 0 ? x : 0;
         }
     }
 
