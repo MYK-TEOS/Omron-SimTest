@@ -31,5 +31,14 @@ namespace UnitTest
                 Assert.Equal(0.0, form.RELU(-2.71));
             }
         }
+
+        [Fact]
+        public void TestSquare()
+        {
+            using (FormMain form = new FormMain())
+            {
+                Assert.Equal(9, form.Square(3));
+            }
+        }
     }
 }

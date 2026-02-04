@@ -606,6 +606,11 @@ namespace Omron_Emu
         {
             return x > 0 ? x : 0;
         }
+
+        public int Square(int x)
+        {
+            return x * x;
+        }
     }
 
     static class Consts
