@@ -17,6 +17,13 @@ env:
   SOLUTION_FILE_PATH: ./Omron-SimTest.sln     # ソリューションファイル名
   BUILD_CONFIGURATION: Release                # ビルド構成 
 
+# テストレポートを書き込むための権限設定
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   build-and-test:
     runs-on: windows-latest  # For a list of available runner types, refer to
@@ -53,4 +60,13 @@ jobs:
 
     # 7. テストの実行
     - name: Run unit tests
-      run: dotnet test ${{ env.SOLUTION_FILE_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
+      run: dotnet test ${{ env.SOLUTION_FILE_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger trx
+
+    # 8. テスト結果レポートの生成と表示
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()                         # テスト失敗時もレポート作成
+      with:
+        name: .NET Test Results            # GitHub上に表示されるレポート名
+        path: '**/TestResults/*.trx'       # 生成されたtrxファイルのパス（ワイルドカード指定）
+        reporter: dotnet-trx               # .NET用の形式を指定
