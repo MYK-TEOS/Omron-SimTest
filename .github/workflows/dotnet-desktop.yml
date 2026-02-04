@@ -1,0 +1,56 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+
+name: Build and Test
+
+on:
+  push:
+  pull_request:
+    branches: [ "CICD-trial" ]
+    paths-ignore:
+      - '.gitignore'
+      - '.gitattributes'
+env:
+  SOLUTION_FILE_PATH: ./Omron-SimTest.sln     # ソリューションファイル名
+  BUILD_CONFIGURATION: Release                # ビルド構成 
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    steps:
+    # 1. コードのチェックアウト
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # 2. .NET 8 のセットアップ (テストプロジェクトとdotnetコマンド用)
+    - name: Install .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    # 3. MSBuild のセットアップ (.NET Framework 4.8 ビルド用)
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    # 4. NuGet のセットアップ (パッケージ復元用)
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+
+    # 5.パッケージの復元
+    - name: Restore NuGet packages
+      run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
+
+    # 6. ソリューション全体のビルド (MSBuildを使用)
+    - name: Build the solution
+      run: msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU"
+
+    # 7. テストの実行
+    - name: Run unit tests
+      run: dotnet test ${{ env.SOLUTION_FILE_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
