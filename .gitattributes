@@ -58,3 +58,4 @@
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
 docs/試験仕様書兼成績書/OST_清浄度センサZN-PDシミュレート_試験仕様書兼結果成績書.xlsm filter=lfs diff=lfs merge=lfs -text
+*.xlsm filter=lfs diff=lfs merge=lfs -text
